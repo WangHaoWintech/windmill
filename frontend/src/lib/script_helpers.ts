@@ -1319,6 +1319,18 @@ main <- function(
     return(toJSON(result, auto_unbox = TRUE))
 }
 `
+const STARROCKS_INIT_CODE = `-- result_collection=last_statement_all_rows
+-- to pin the database use '-- database f/your/path'
+-- to stream a large query result to your workspace storage use '-- s3'
+-- to feed an S3Object (json/jsonl/parquet/csv) as a parameter, declare it as (s3object):
+--   -- :input_file (s3object)
+--   INSERT INTO demo SELECT * FROM JSON_TABLE(:input_file, '$[*]' COLUMNS (id INT PATH '$.id', name VARCHAR(255) PATH '$.name')) AS x;
+-- :name1 (text) = default arg
+-- :name2 (int)
+-- :name3 (int)
+INSERT INTO demo VALUES (:name1, :name2);
+UPDATE demo SET col2 = :name3 WHERE col2 = :name2;
+`
 // for related places search: ADD_NEW_LANG
 export const INITIAL_CODE = {
 	bun: {
@@ -1431,6 +1443,9 @@ export const INITIAL_CODE = {
 	},
 	ci_test_python: {
 		script: CI_TEST_PYTHON_INIT_CODE
+	},
+	starrocks: {
+		script: STARROCKS_INIT_CODE
 	}
 	// for related places search: ADD_NEW_LANG
 }
@@ -1560,6 +1575,8 @@ export function initialCode(
 		return INITIAL_CODE.ruby.script
 	} else if (language == 'rlang') {
 		return INITIAL_CODE.rlang.script
+	} else if (language == 'starrocks') {
+		return INITIAL_CODE.starrocks.script
 		// for related places search: ADD_NEW_LANG
 	} else if (language == 'bun' || language == 'bunnative') {
 		if (subkind === 'claudesandbox') {

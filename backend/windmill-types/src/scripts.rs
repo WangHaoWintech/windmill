@@ -52,6 +52,7 @@ pub enum ScriptLang {
     Bun,
     Bunnative,
     Mysql,
+    StarRocks,
     Bigquery,
     Snowflake,
     Graphql,
@@ -82,6 +83,7 @@ impl ScriptLang {
             ScriptLang::Powershell => "powershell",
             ScriptLang::Postgresql => "postgresql",
             ScriptLang::Mysql => "mysql",
+            ScriptLang::StarRocks => "starrocks",
             ScriptLang::Bigquery => "bigquery",
             ScriptLang::Snowflake => "snowflake",
             ScriptLang::Mssql => "mssql",
@@ -122,6 +124,7 @@ impl ScriptLang {
                 | ScriptLang::Nativets
                 | ScriptLang::Postgresql
                 | ScriptLang::Mysql
+                | ScriptLang::StarRocks
                 | ScriptLang::Graphql
                 | ScriptLang::Snowflake
                 | ScriptLang::Mssql
@@ -135,7 +138,7 @@ impl ScriptLang {
         match self {
             Nativets | Bun | Bunnative | Deno | Go | Php | CSharp | Java => "//",
             Python3 | Bash | Powershell | Graphql | Ansible | Nu | Ruby | Rlang => "#",
-            Postgresql | Mysql | Bigquery | Snowflake | Mssql | OracleDB | DuckDb => "--",
+            Postgresql | Mysql | StarRocks | Bigquery | Snowflake | Mssql | OracleDB | DuckDb => "--",
             Rust => "//!",
             // for related places search: ADD_NEW_LANG
         }
@@ -157,6 +160,7 @@ impl FromStr for ScriptLang {
             "powershell" => ScriptLang::Powershell,
             "postgresql" => ScriptLang::Postgresql,
             "mysql" => ScriptLang::Mysql,
+            "starrocks" => ScriptLang::StarRocks,
             "bigquery" => ScriptLang::Bigquery,
             "snowflake" => ScriptLang::Snowflake,
             "mssql" => ScriptLang::Mssql,

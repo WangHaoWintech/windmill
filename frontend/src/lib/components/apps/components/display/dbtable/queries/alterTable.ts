@@ -203,6 +203,7 @@ function renderAlterDatatype(
 		case 'ms_sql_server':
 			return `ALTER TABLE ${tableRef} ALTER COLUMN ${columnName} ${datatype};`
 		case 'mysql':
+		case 'starrocks':
 			return `ALTER TABLE ${tableRef} MODIFY COLUMN ${columnName} ${datatype};`
 		case 'snowflake':
 		case 'bigquery':
@@ -223,6 +224,7 @@ function renderDropDefaultValue(
 		case 'postgresql':
 		case 'duckdb':
 		case 'mysql':
+		case 'starrocks':
 		case 'snowflake':
 		case 'bigquery':
 			return `ALTER TABLE ${tableRef} ALTER COLUMN ${columnName} DROP DEFAULT;`
@@ -243,6 +245,7 @@ function renderAddDefaultValue(
 		case 'postgresql':
 		case 'duckdb':
 		case 'mysql':
+		case 'starrocks':
 		case 'snowflake':
 		case 'bigquery':
 			return `ALTER TABLE ${tableRef} ALTER COLUMN ${columnName} SET DEFAULT ${defaultValue};`
@@ -271,6 +274,7 @@ function renderAlterNullable(
 			// MS SQL requires specifying the datatype when altering nullability
 			return `ALTER TABLE ${tableRef} ALTER COLUMN ${columnName} ${datatype} ${nullable ? 'NULL' : 'NOT NULL'};`
 		case 'mysql':
+		case 'starrocks':
 			return `ALTER TABLE ${tableRef} MODIFY COLUMN ${columnName} ${datatype} ${nullable ? 'NULL' : 'NOT NULL'};`
 		default:
 			throw new Error(`Unsupported database type: ${dbType}`)
@@ -289,6 +293,7 @@ function renderRenameColumn(
 		case 'snowflake':
 		case 'bigquery':
 		case 'mysql':
+		case 'starrocks':
 			return `ALTER TABLE ${tableRef} RENAME COLUMN ${oldName} TO ${newName};`
 		case 'ms_sql_server':
 			return `EXEC sp_rename '${tableRef}.${oldName}', '${newName}', 'COLUMN';`

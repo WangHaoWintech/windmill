@@ -188,6 +188,7 @@ lazy_static::lazy_static! {
         "ruby".to_string(),
         "rlang".to_string(),
         "duckdb".to_string(),
+        "starrocks".to_string(),
         // for related places search: ADD_NEW_LANG
         "dependency".to_string(),
         "flow".to_string(),
@@ -202,7 +203,8 @@ lazy_static::lazy_static! {
         "snowflake".to_string(),
         "mssql".to_string(),
         "bigquery".to_string(),
-        "oracledb".to_string()
+        "oracledb".to_string(),
+        "starrocks".to_string()
         // for related places search: ADD_NEW_LANG
     ];
 

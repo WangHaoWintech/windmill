@@ -32,7 +32,8 @@ export function makeDeleteQuery(table: string, columns: ColumnDef[], dbType: DbT
 			query += `\nDELETE FROM ${table} \nWHERE ${conditions} RETURNING 1;`
 			return query
 		}
-		case 'mysql': {
+		case 'mysql':
+		case 'starrocks': {
 			const conditions = columns
 				.map((c) => `(:${c.field} IS NULL AND ${c.field} IS NULL OR ${c.field} = :${c.field})`)
 				.join('\n    AND ')

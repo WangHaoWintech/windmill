@@ -185,6 +185,9 @@ use crate::ansible_executor::handle_ansible_job;
 #[cfg(feature = "mysql")]
 use crate::mysql_executor::do_mysql;
 
+#[cfg(feature = "starrocks")]
+use crate::starrocks_executor::do_starrocks;
+
 #[cfg(feature = "duckdb")]
 use crate::duckdb_executor::do_duckdb;
 
@@ -4895,6 +4898,33 @@ pub async fn run_language_executor(
             ))
             .await;
         }
+    } else if language == Some(ScriptLang::StarRocks) {
+        #[cfg(not(feature = "starrocks"))]
+        return Err(Error::internal_err(
+            "StarRocks requires the starrocks feature to be enabled".to_string(),
+        ));
+
+        #[cfg(feature = "starrocks")]
+        {
+            if run_inline {
+                return Err(Error::internal_err(
+                    "Inline execution is not yet supported for this language".to_string(),
+                ));
+            }
+            return Box::pin(do_starrocks(
+                job,
+                &client,
+                &code,
+                conn,
+                mem_peak,
+                canceled_by,
+                worker_name,
+                column_order,
+                occupancy_metrics,
+                parent_runnable_path,
+            ))
+            .await;
+        }
     } else if language == Some(ScriptLang::Bigquery) {
         #[cfg(not(feature = "enterprise"))]
         {
@@ -5853,6 +5883,7 @@ pub fn parse_sig_of_lang(
             ScriptLang::Powershell => Some(windmill_parser_bash::parse_powershell_sig(code)?),
             ScriptLang::Postgresql => Some(windmill_parser_sql::parse_pgsql_sig(code)?),
             ScriptLang::Mysql => Some(windmill_parser_sql::parse_mysql_sig(code)?),
+            ScriptLang::StarRocks => Some(windmill_parser_sql::parse_starrocks_sig(code)?),
             ScriptLang::Bigquery => Some(windmill_parser_sql::parse_bigquery_sig(code)?),
             ScriptLang::Snowflake => Some(windmill_parser_sql::parse_snowflake_sig(code)?),
             ScriptLang::Graphql => None,

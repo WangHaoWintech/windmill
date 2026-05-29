@@ -36,6 +36,7 @@ export const LANGUAGE_EXTENSIONS: Record<SupportedLanguage, string> = {
   bunnative: "ts",
   ruby: "rb",
   rlang: "r",
+  starrocks: "sr.sql",
   // for related places search: ADD_NEW_LANG
 };
 

@@ -13,6 +13,7 @@ import Mail from './Mail.svelte'
 import MastodonIcon from './MastodonIcon.svelte'
 import MatrixIcon from './MatrixIcon.svelte'
 import Mysql from './Mysql.svelte'
+import StarRocksIcon from './StarRocksIcon.svelte'
 import PostgresIcon from './PostgresIcon.svelte'
 import S3Icon from './S3Icon.svelte'
 import Slack from './Slack.svelte'
@@ -225,6 +226,7 @@ import type { Component } from 'svelte'
 export const APP_TO_ICON_COMPONENT = {
 	postgresql: PostgresIcon,
 	mysql: Mysql,
+	starrocks: StarRocksIcon,
 	smtp: Mail,
 	slack: Slack,
 	github: GithubIcon,

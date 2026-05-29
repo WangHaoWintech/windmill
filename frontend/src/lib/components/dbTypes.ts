@@ -20,6 +20,7 @@ export const dbTypes = [
 	'postgresql',
 	'snowflake',
 	'bigquery',
-	'duckdb'
+	'duckdb',
+	'starrocks'
 ] as const
 export const isDbType = (str?: string): str is DbType => !!str && dbTypes.includes(str as DbType)

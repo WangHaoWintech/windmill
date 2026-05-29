@@ -55,6 +55,8 @@ pub mod memory_ee;
 pub mod memory_oss;
 #[cfg(feature = "mysql")]
 mod mysql_executor;
+#[cfg(feature = "starrocks")]
+mod starrocks_executor;
 #[cfg(feature = "nu")]
 mod nu_executor;
 #[cfg(feature = "oracledb")]

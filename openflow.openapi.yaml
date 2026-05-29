@@ -672,6 +672,7 @@ components:
             - ruby
             - rlang
             - duckdb
+            - starrocks
             # for related places search: ADD_NEW_LANG
         path:
           type: string

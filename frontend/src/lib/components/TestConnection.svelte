@@ -39,6 +39,11 @@
 			lang: 'mysql',
 			argName: 'database'
 		},
+		starrocks: {
+			code: `SELECT 1`,
+			lang: 'starrocks',
+			argName: 'database'
+		},
 		bigquery: {
 			code: `select 1`,
 			lang: 'bigquery',

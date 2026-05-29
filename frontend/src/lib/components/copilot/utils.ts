@@ -28,6 +28,7 @@ export const getCommentSymbol = (
 		case 'rust':
 		case 'postgresql':
 		case 'mysql':
+		case 'starrocks':
 		case 'bigquery':
 		case 'snowflake':
 		case 'mssql':

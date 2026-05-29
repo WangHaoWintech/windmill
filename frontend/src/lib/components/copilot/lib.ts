@@ -624,7 +624,7 @@ export function stringifySchema(dbSchema: Omit<SQLSchema, 'stringified'>): strin
 	let finalSchema: typeof smallerSchema | (typeof smallerSchema)['schemaKey'] = smallerSchema
 	if (dbSchema.publicOnly) {
 		finalSchema = smallerSchema.public || smallerSchema.PUBLIC || smallerSchema.dbo || smallerSchema
-	} else if (lang === 'mysql' && Object.keys(smallerSchema).length === 1) {
+	} else if ((lang === 'mysql' || lang === 'starrocks') && Object.keys(smallerSchema).length === 1) {
 		finalSchema = smallerSchema[Object.keys(smallerSchema)[0]]
 	}
 	return JSON.stringify(finalSchema)

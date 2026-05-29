@@ -21,7 +21,8 @@ export type ScriptLanguage =
   | "ansible"
   | "ruby"
   | "rlang"
-  | "java";
+  | "java"
+  | "starrocks";
 // for related places search: ADD_NEW_LANG
 
 // To make language support raw requirements:
@@ -108,6 +109,8 @@ export function inferContentTypeFromFilePath(
     return "ruby";
   } else if (contentPath.endsWith(".r")) {
     return "rlang";
+  } else if (contentPath.endsWith(".sr.sql")) {
+    return "starrocks";
 	// for related places search: ADD_NEW_LANG
   } else {
     const ext = contentPath.substring(contentPath.lastIndexOf("."));

@@ -180,7 +180,8 @@
 			'mssql',
 			'oracledb',
 			'snowflake',
-			'duckdb'
+			'duckdb',
+			'starrocks'
 			// for related places search: ADD_NEW_LANG
 		].includes(lang ?? '')
 	)
@@ -616,7 +617,7 @@
 		} else if (lang == 'ansible') {
 			editor.insertAtCursor(`{{ lookup('env', '${name}') }}`)
 		} else if (
-			['postgresql', 'mysql', 'bigquery', 'mssql', 'oracledb', 'snowflake', 'duckdb'].includes(
+			['postgresql', 'mysql', 'bigquery', 'mssql', 'oracledb', 'snowflake', 'duckdb', 'starrocks'].includes(
 				lang ?? ''
 			)
 		) {

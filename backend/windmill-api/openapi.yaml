@@ -24578,6 +24578,7 @@ components:
           rlang,
           duckdb,
           bunnative,
+          starrocks,
           # for related places search: ADD_NEW_LANG
         ]
 

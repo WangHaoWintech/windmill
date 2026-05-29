@@ -1,0 +1,2 @@
+-- Add down migration script here
+-- PostgreSQL does not support removing enum values; this is a no-op

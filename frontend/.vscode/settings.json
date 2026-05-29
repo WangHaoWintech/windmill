@@ -1,8 +1,1 @@
-{
-	"remote.portsAttributes": {
-		"3000": {
-			"label": "Development Server",
-			"onAutoForward": "openPreview"
-		}
-	}
-}
+{"remote.portsAttributes":{"3000":{"label":"Development Server","onAutoForward":"openPreview"}},"extensions.allowed":{"*":true,"MarsCode.marscode-extension":true,"Alibaba-Cloud.tongyi-lingma":true}}

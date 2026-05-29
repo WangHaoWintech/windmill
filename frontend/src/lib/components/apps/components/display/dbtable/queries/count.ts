@@ -37,6 +37,7 @@ export function makeCountQuery(
 
 	switch (dbType) {
 		case 'mysql':
+		case 'starrocks':
 			if (filteredColumns.length > 0) {
 				quicksearchCondition += ` (:quicksearch = '' OR CONCAT_WS(' ', ${filteredColumns.join(
 					', '

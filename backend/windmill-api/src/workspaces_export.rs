@@ -735,6 +735,7 @@ pub(crate) async fn tarball_workspace(
                 ScriptLang::CSharp => "cs",
                 ScriptLang::Nu => "nu",
                 ScriptLang::OracleDB => "odb.sql",
+                ScriptLang::StarRocks => "sr.sql",
                 ScriptLang::Java => "java",
                 ScriptLang::Ruby => "rb",
                 ScriptLang::Rlang => "r",

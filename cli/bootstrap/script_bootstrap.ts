@@ -140,5 +140,8 @@ main <- function(x, name = "default") {
     return(list(result = x, name = name))
 }
 `,
+  starrocks: `
+SELECT 1 AS result;
+`,
   // for related places search: ADD_NEW_LANG
 };

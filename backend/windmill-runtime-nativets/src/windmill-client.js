@@ -3001,6 +3001,7 @@ var $RawScript = {
         "duckdb",
         "ruby",
         "rlang",
+        "starrocks",
         // for related places search: ADD_NEW_LANG
       ],
     },

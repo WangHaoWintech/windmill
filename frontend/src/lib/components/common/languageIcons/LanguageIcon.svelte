@@ -27,6 +27,7 @@
 	import RubyIcon from '$lib/components/icons/RubyIcon.svelte'
 	import RIcon from '$lib/components/icons/RIcon.svelte'
 	import ClaudeIcon from '$lib/components/icons/ClaudeIcon.svelte'
+	import StarRocksIcon from '$lib/components/icons/StarRocksIcon.svelte'
 
 	interface Props {
 		lang:
@@ -74,7 +75,8 @@
 		java: 'Java',
 		ruby: 'Ruby',
 		rlang: 'R',
-		claudesandbox: 'Claude Sandbox'
+		claudesandbox: 'Claude Sandbox',
+		starrocks: 'StarRocks'
 		// for related places search: ADD_NEW_LANG
 	}
 
@@ -111,7 +113,8 @@
 		ruby: RubyIcon,
 		rlang: RIcon,
 		duckdb: DuckDbIcon,
-		claudesandbox: TypeScriptIcon
+		claudesandbox: TypeScriptIcon,
+		starrocks: StarRocksIcon
 		// for related places search: ADD_NEW_LANG
 	}
 

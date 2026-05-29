@@ -22,6 +22,10 @@ pub use windmill_parser::{
 pub const SANITIZED_ENUM_STR: &str = "__sanitized_enum__";
 pub const SANITIZED_RAW_STRING_STR: &str = "__sanitized_raw_string__";
 
+pub fn parse_starrocks_sig(code: &str) -> anyhow::Result<MainArgSignature> {
+    parse_mysql_sig(code)
+}
+
 pub fn parse_mysql_sig(code: &str) -> anyhow::Result<MainArgSignature> {
     let parsed = parse_mysql_file(&code)?;
     if let Some(x) = parsed {

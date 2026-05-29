@@ -16,6 +16,7 @@ import { getLanguageByResourceType, type ColumnDef } from '../utils'
 function formatInsertValues(columns: ColumnDef[], dbType: DbType, startIndex: number = 1): string {
 	switch (dbType) {
 		case 'mysql':
+		case 'starrocks':
 			return columns.map((c) => `:${c.field}`).join(', ')
 		case 'postgresql':
 			return columns.map((c, i) => `$${startIndex + i}::${c.datatype}`).join(', ')

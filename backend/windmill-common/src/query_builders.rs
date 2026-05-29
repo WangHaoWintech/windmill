@@ -81,6 +81,7 @@ const WM_INTERNAL_PREFIX: &str = "-- WM_INTERNAL_DB_";
 pub enum DbType {
     Postgresql,
     Mysql,
+    StarRocks,
     MsSqlServer,
     Snowflake,
     Bigquery,
@@ -92,6 +93,7 @@ impl DbType {
         match lang {
             ScriptLang::Postgresql => Some(DbType::Postgresql),
             ScriptLang::Mysql => Some(DbType::Mysql),
+            ScriptLang::StarRocks => Some(DbType::StarRocks),
             ScriptLang::Mssql => Some(DbType::MsSqlServer),
             ScriptLang::Snowflake => Some(DbType::Snowflake),
             ScriptLang::Bigquery => Some(DbType::Bigquery),
@@ -503,7 +505,9 @@ pub fn build_parameters(columns: &[SimpleColumn], db_type: DbType) -> String {
             };
             match db_type {
                 DbType::Postgresql => format!("-- ${} {} ({})", i + 1, col.field, base_type),
-                DbType::Mysql => format!("-- :{} ({})", col.field, base_type),
+                DbType::Mysql | DbType::StarRocks => {
+                    format!("-- :{} ({})", col.field, base_type)
+                }
                 DbType::MsSqlServer => {
                     format!("-- @p{} {} ({})", i + 1, col.field, base_type)
                 }
@@ -552,7 +556,9 @@ pub fn render_db_quoted_identifier(identifier: &str, db_type: DbType) -> String 
             format!("\"{}\"", identifier.replace('"', "\"\""))
         }
         DbType::MsSqlServer => format!("[{}]", identifier.replace(']', "]]")),
-        DbType::Mysql | DbType::Bigquery => format!("`{}`", identifier.replace('`', "``")),
+        DbType::Mysql | DbType::StarRocks | DbType::Bigquery => {
+            format!("`{}`", identifier.replace('`', "``"))
+        }
     }
 }
 
@@ -776,6 +782,45 @@ pub fn make_select_query(
                     let quoted = qi(&col.field, db_type);
                     format!(
                         "\nCASE WHEN :order_by = '{}' AND :is_desc IS false THEN {} END,\nCASE WHEN :order_by = '{}' AND :is_desc IS true THEN {} END DESC",
+                        escaped, quoted, escaped, quoted
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",\n");
+
+            let quicksearch = format!(
+                " (:quicksearch = '' OR CONCAT_WS(' ', {}) LIKE CONCAT('%', :quicksearch, '%'))",
+                filtered_columns.join(", ")
+            );
+
+            query.push_str(&format!(
+                "SELECT {} FROM {}",
+                select_clause,
+                quote_table_name(table, db_type)
+            ));
+            query.push_str(&format!(
+                " WHERE {} {}",
+                where_clause
+                    .map(|wc| format!("{} AND", wc))
+                    .unwrap_or_default(),
+                quicksearch
+            ));
+            query.push_str(&format!(" ORDER BY {}", order_by));
+            query.push_str(" LIMIT :limit OFFSET :offset");
+            Ok(query)
+        }
+        DbType::StarRocks => {
+            let mut query = build_parameters(&params, db_type);
+            query.push('\n');
+
+            // StarRocks does not support `IS false`/`IS true`; use `= 0`/`= 1` instead.
+            let order_by: String = column_defs
+                .iter()
+                .map(|col| {
+                    let escaped = escape_sql_literal(&col.field);
+                    let quoted = qi(&col.field, db_type);
+                    format!(
+                        "\nCASE WHEN :order_by = '{}' AND :is_desc = 0 THEN {} END,\nCASE WHEN :order_by = '{}' AND :is_desc = 1 THEN {} END DESC",
                         escaped, quoted, escaped, quoted
                     )
                 })
@@ -1081,7 +1126,7 @@ pub fn make_count_query(
     let filtered_columns = build_visible_field_list(column_defs, db_type);
 
     match db_type {
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             if !filtered_columns.is_empty() {
                 quicksearch_condition.push_str(&format!(
                     " (:quicksearch = '' OR CONCAT_WS(' ', {}) LIKE CONCAT('%', :quicksearch, '%'))",
@@ -1216,6 +1261,7 @@ pub fn make_count_query(
         && matches!(
             db_type,
             DbType::Mysql
+                | DbType::StarRocks
                 | DbType::Postgresql
                 | DbType::Snowflake
                 | DbType::Bigquery
@@ -1277,7 +1323,7 @@ pub fn make_delete_query(table: &str, columns: &[ColumnDef], db_type: DbType) ->
                 qt, conditions
             ));
         }
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             let conditions: String = columns
                 .iter()
                 .map(|c| {
@@ -1384,7 +1430,7 @@ fn format_insert_values(columns: &[ColumnDef], db_type: DbType, start_index: usi
         .iter()
         .enumerate()
         .map(|(i, c)| match db_type {
-            DbType::Mysql => format!(":{}", c.field),
+            DbType::Mysql | DbType::StarRocks => format!(":{}", c.field),
             DbType::Postgresql => format!("${}", start_index + i),
             DbType::MsSqlServer => format!("@p{}", start_index + i),
             DbType::Snowflake => "?".to_string(),
@@ -1578,7 +1624,7 @@ pub fn make_update_query(
                 qt, qcol, conditions
             ));
         }
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             let conditions: String = columns
                 .iter()
                 .map(|c| {
@@ -2153,7 +2199,7 @@ fn make_alter_table_queries(p: &AlterTablePayload, db_type: DbType) -> Result<Ve
                 ));
             }
             AlterTableOperation::DropForeignKey { fk_constraint_name } => {
-                if db_type == DbType::Mysql {
+                if db_type == DbType::Mysql || db_type == DbType::StarRocks {
                     queries.push(format!(
                         "ALTER TABLE {} DROP FOREIGN KEY {};",
                         tref,
@@ -2219,7 +2265,10 @@ fn make_alter_table_queries(p: &AlterTablePayload, db_type: DbType) -> Result<Ve
                 }
             }
             AlterTableOperation::DropPrimaryKey { pk_constraint_name } => {
-                if db_type == DbType::Mysql || pk_constraint_name.is_none() {
+                if db_type == DbType::Mysql
+                    || db_type == DbType::StarRocks
+                    || pk_constraint_name.is_none()
+                {
                     queries.push(format!("ALTER TABLE {} DROP PRIMARY KEY;", tref));
                 } else {
                     queries.push(format!(
@@ -2336,7 +2385,7 @@ fn render_alter_datatype(table_ref: &str, col: &str, datatype: &str, db_type: Db
                 table_ref, qc, datatype
             )
         }
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             format!(
                 "ALTER TABLE {} MODIFY COLUMN {} {};",
                 table_ref, qc, datatype
@@ -2422,7 +2471,7 @@ fn render_alter_nullable(
                 table_ref, qc, datatype, null_str
             )
         }
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             let null_str = if nullable { "NULL" } else { "NOT NULL" };
             format!(
                 "ALTER TABLE {} MODIFY COLUMN {} {} {};",
@@ -2552,6 +2601,44 @@ WHERE table_catalog = current_database()",
             };
             Ok(format!(
                 "SELECT \n    COLUMN_NAME as field,\n    COLUMN_TYPE as DataType,\n    COLUMN_DEFAULT as DefaultValue,\n    CASE WHEN COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END as IsPrimaryKey,\n    CASE WHEN EXTRA like '%auto_increment%' THEN 'YES' ELSE 'NO' END as IsIdentity,\n    CASE WHEN IS_NULLABLE = 'YES' THEN 'YES' ELSE 'NO' END as IsNullable,\n    CASE WHEN DATA_TYPE = 'enum' THEN true ELSE false END as IsEnum{}\nFROM \n    INFORMATION_SCHEMA.COLUMNS{}\nORDER BY\n    TABLE_NAME,\n    ORDINAL_POSITION;",
+                extra_col, table_filter
+            ))
+        }
+        DbType::StarRocks => {
+            // StarRocks does not support `THEN true ELSE false`; use `1`/`0` instead.
+            // Also excludes StarRocks system schemas (no '_vt').
+            let explicit_db = database_name.filter(|s| !s.is_empty());
+            let table_filter = if let Some(t) = table {
+                let parts: Vec<&str> = t.split('.').collect();
+                let tname = parts[parts.len() - 1];
+                let schema_sql = if parts.len() > 1 {
+                    format!("'{}'", escape_sql_literal(parts[0]))
+                } else {
+                    explicit_db
+                        .map(|dn| format!("'{}'", escape_sql_literal(dn)))
+                        .unwrap_or_else(|| "DATABASE()".to_string())
+                };
+                format!(
+                    "\nWHERE\n    TABLE_NAME = '{}' AND TABLE_SCHEMA = {}",
+                    escape_sql_literal(tname),
+                    schema_sql
+                )
+            } else {
+                let schema_predicate = explicit_db
+                    .map(|dn| format!("TABLE_SCHEMA = '{}'", escape_sql_literal(dn)))
+                    .unwrap_or_else(|| "TABLE_SCHEMA = DATABASE()".to_string());
+                format!(
+                    "\nWHERE\n    {}\n    AND TABLE_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')",
+                    schema_predicate
+                )
+            };
+            let extra_col = if table.is_none() {
+                ",\n    TABLE_NAME as table_name"
+            } else {
+                ""
+            };
+            Ok(format!(
+                "SELECT \n    COLUMN_NAME as field,\n    COLUMN_TYPE as DataType,\n    COLUMN_DEFAULT as DefaultValue,\n    CASE WHEN COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END as IsPrimaryKey,\n    CASE WHEN EXTRA like '%auto_increment%' THEN 'YES' ELSE 'NO' END as IsIdentity,\n    CASE WHEN IS_NULLABLE = 'YES' THEN 'YES' ELSE 'NO' END as IsNullable,\n    CASE WHEN DATA_TYPE = 'enum' THEN 1 ELSE 0 END as IsEnum{}\nFROM \n    INFORMATION_SCHEMA.COLUMNS{}\nORDER BY\n    TABLE_NAME,\n    ORDINAL_POSITION;",
                 extra_col, table_filter
             ))
         }
@@ -2721,7 +2808,7 @@ fn make_foreign_keys_query(
         default_schema.unwrap_or(match db_type {
             DbType::Postgresql => "public",
             DbType::Duckdb => "main",
-            DbType::Mysql => "",
+            DbType::Mysql | DbType::StarRocks => "",
             DbType::MsSqlServer => "dbo",
             DbType::Snowflake => "PUBLIC",
             DbType::Bigquery => return Err("BigQuery requires a schema for FK queries".to_string()),
@@ -2736,7 +2823,7 @@ fn make_foreign_keys_query(
             "SELECT\n    tc.constraint_name as fk_constraint_name,\n    kcu.column_name as source_column,\n    ccu.table_schema || '.' || ccu.table_name as target_table,\n    ccu.column_name as target_column,\n    COALESCE(rc.delete_rule, 'NO ACTION') as on_delete,\n    COALESCE(rc.update_rule, 'NO ACTION') as on_update\nFROM\n    information_schema.table_constraints AS tc\n    JOIN information_schema.key_column_usage AS kcu\n        ON tc.constraint_name = kcu.constraint_name\n        AND tc.table_schema = kcu.table_schema\n    JOIN information_schema.constraint_column_usage AS ccu\n        ON ccu.constraint_name = tc.constraint_name\n        AND ccu.table_schema = tc.table_schema\n    LEFT JOIN information_schema.referential_constraints AS rc\n        ON rc.constraint_name = tc.constraint_name\n        AND rc.constraint_schema = tc.table_schema\nWHERE\n    tc.constraint_type = 'FOREIGN KEY'\n    AND tc.table_name = '{}'\n    AND tc.table_schema = '{}'\nORDER BY\n    tc.constraint_name, kcu.ordinal_position;",
             tn, sn
         )),
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             let where_schema = if schema_name.is_empty() {
                 "AND kcu.TABLE_SCHEMA = DATABASE()".to_string()
             } else {
@@ -2780,7 +2867,7 @@ fn make_primary_key_constraint_query(
         default_schema.unwrap_or(match db_type {
             DbType::Postgresql => "public",
             DbType::Duckdb => "main",
-            DbType::Mysql => "",
+            DbType::Mysql | DbType::StarRocks => "",
             DbType::MsSqlServer => "dbo",
             DbType::Snowflake => "PUBLIC",
             DbType::Bigquery => return Err("BigQuery requires a schema for PK queries".to_string()),
@@ -2795,7 +2882,7 @@ fn make_primary_key_constraint_query(
             "SELECT\n    tc.constraint_name\nFROM\n    information_schema.table_constraints AS tc\nWHERE\n    tc.constraint_type = 'PRIMARY KEY'\n    AND tc.table_name = '{}'\n    AND tc.table_schema = '{}'\nLIMIT 1;",
             tn, sn
         )),
-        DbType::Mysql => {
+        DbType::Mysql | DbType::StarRocks => {
             let where_schema = if schema_name.is_empty() {
                 "AND tc.TABLE_SCHEMA = DATABASE()".to_string()
             } else {

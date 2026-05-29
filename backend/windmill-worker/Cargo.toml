@@ -30,6 +30,7 @@ otel = ["windmill-common/otel", "dep:opentelemetry", "dep:tracing-opentelemetry"
 dind = ["dep:bollard"]
 php = ["dep:windmill-parser-php"]
 mysql = ["dep:mysql_async"]
+starrocks = ["dep:mysql_async"]
 oracledb = ["dep:oracle"]
 python = ["dep:windmill-parser-py", "dep:windmill-parser-py-imports", "windmill-dep-map/python"]
 csharp = ["dep:windmill-parser-csharp"]

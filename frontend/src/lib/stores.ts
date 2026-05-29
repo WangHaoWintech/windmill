@@ -174,6 +174,7 @@ type SQLBaseSchema = {
 
 export const SQLSchemaLanguages = [
 	'mysql',
+	'starrocks',
 	'bigquery',
 	'postgresql',
 	'snowflake',

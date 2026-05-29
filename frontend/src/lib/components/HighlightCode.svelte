@@ -94,6 +94,8 @@
 				return ruby
 			case 'rlang':
 				return r
+			case 'starrocks':
+				return sql
 			case 'json':
 				return json
 			// for related places search: ADD_NEW_LANG

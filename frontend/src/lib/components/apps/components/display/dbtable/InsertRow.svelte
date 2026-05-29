@@ -34,6 +34,7 @@
 		let rawType = ''
 		switch (dbType) {
 			case 'mysql':
+			case 'starrocks':
 				rawType = parse_mysql(field)
 				break
 			case 'postgresql':

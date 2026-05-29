@@ -294,7 +294,8 @@ const SQL_LANGUAGES = [
 	'snowflake',
 	'mssql',
 	'oracledb',
-	'duckdb'
+	'duckdb',
+	'starrocks'
 ]
 
 /**
@@ -410,7 +411,9 @@ export async function inferArgs(
 		}
 
 		if (
-			['postgresql', 'mysql', 'bigquery', 'snowflake', 'mssql', 'oracledb'].includes(language ?? '')
+			['postgresql', 'mysql', 'bigquery', 'snowflake', 'mssql', 'oracledb', 'starrocks'].includes(
+				language ?? ''
+			)
 		) {
 			inlineDBResource = parse_db_resource(code)
 		}
@@ -520,6 +523,15 @@ export async function inferArgs(
 				inferedSchema = JSON.parse(parse_r(code))
 			} catch {
 				inferedSchema = parseRSignatureFallback(code)
+			}
+		} else if (language == 'starrocks') {
+			await initWasmRegex()
+			inferedSchema = JSON.parse(parse_mysql(code))
+			if (inlineDBResource === undefined) {
+				inferedSchema.args = [
+					{ name: 'database', typ: { resource: 'starrocks' } },
+					...inferedSchema.args
+				]
 			}
 			// for related places search: ADD_NEW_LANG
 		} else {

@@ -117,6 +117,8 @@ export function extToLang(ext: string) {
 			return 'ruby'
 		case 'r':
 			return 'r'
+		case 'sr.sql':
+			return 'sql'
 		// for related places search: ADD_NEW_LANG
 		default:
 			return 'unknown'

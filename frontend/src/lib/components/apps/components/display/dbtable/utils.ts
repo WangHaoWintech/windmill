@@ -235,6 +235,43 @@ return schema
 		},
 		argName: 'database'
 	},
+	starrocks: {
+		code: "SELECT DATABASE() AS default_db_name, TABLE_SCHEMA, TABLE_NAME, DATA_TYPE, COLUMN_NAME, COLUMN_DEFAULT FROM information_schema.columns WHERE table_schema = DATABASE() OR table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys');",
+		processingFn: (rows) => {
+			const schemas = rows.reduce((acc, a) => {
+				const table_schema = a.TABLE_SCHEMA
+				delete a.TABLE_SCHEMA
+				acc[table_schema] = acc[table_schema] || []
+				acc[table_schema].push(a)
+				return acc
+			}, {})
+
+			const data = {}
+			for (const key in schemas) {
+				data[key] = schemas[key].reduce((acc, a) => {
+					const table_name = a.TABLE_NAME
+					delete a.TABLE_NAME
+					acc[table_name] = acc[table_name] || {}
+					const p: {
+						type: string
+						required: boolean
+						default?: string
+					} = {
+						type: a.DATA_TYPE,
+						required: a.is_nullable === 'NO'
+					}
+					if (a.column_default) {
+						p.default = a.COLUMN_DEFAULT
+					}
+					acc[table_name][a.COLUMN_NAME] = p
+					return acc
+				}, {})
+			}
+			return data
+		},
+		lang: 'starrocks',
+		argName: 'database'
+	},
 	mssql: {
 		argName: 'database',
 		code: `select TABLE_SCHEMA, TABLE_NAME, DATA_TYPE, COLUMN_NAME, COLUMN_DEFAULT from information_schema.columns where table_schema != 'sys'`,
@@ -319,7 +356,8 @@ export function renderDbQuotedIdentifier(identifier: string, dbType: DbType): st
 		case 'ms_sql_server':
 			return `[${identifier}]` // MSSQL uses square brackets for identifiers
 		case 'mysql':
-			return `\`${identifier}\`` // MySQL uses backticks
+		case 'starrocks':
+			return `\`${identifier}\`` // MySQL/StarRocks use backticks
 		case 'snowflake':
 			return `"${identifier}"` // Snowflake uses double quotes for identifiers
 		case 'bigquery':
@@ -340,7 +378,8 @@ export function getLanguageByResourceType(name: string): ScriptLang {
 		snowflake: 'snowflake',
 		snowflake_oauth: 'snowflake',
 		bigquery: 'bigquery',
-		duckdb: 'duckdb'
+		duckdb: 'duckdb',
+		starrocks: 'starrocks'
 	}
 	return language[name]
 }
@@ -358,6 +397,7 @@ export function buildParameters(
 				case 'postgresql':
 					return `-- $${i + 1} ${column.field}`
 				case 'mysql':
+				case 'starrocks':
 					return `-- :${column.field} (${column.datatype.split('(')[0]})`
 				case 'ms_sql_server':
 					return `-- @p${i + 1} ${column.field} (${column.datatype.split('(')[0]})`
