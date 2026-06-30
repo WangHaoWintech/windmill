@@ -220,6 +220,7 @@ where
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .worker_threads(32)
+        .thread_stack_size(if cfg!(debug_assertions) { 64 * 1024 * 1024 } else { 8 * 1024 * 1024 })
         .build()
         .unwrap();
 
